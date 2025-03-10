@@ -1,6 +1,6 @@
 {
   "name": "foundry-messenger",
-  "url": "https://github.com/nkkpao/fvtt-FakeDice",
+  "url": "https://github.com/nkkpao/foundry-messenger",
   "manifest": "https://raw.githubusercontent.com/nkkpao/foundry-messenger/main/module.json",
   "download": "https://github.com/nkkpao/foundry-messenger/releases/download/foundrymessenger/foundry-messenger.zip",
   "bugs": "https://github.com/nkkpao/foundry-messenger/issues",
