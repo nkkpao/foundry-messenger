@@ -157,9 +157,7 @@ class MessengerApp extends Application {
     if (!this.chats[npcId]) this.chats[npcId] = [];
     this.chats[npcId].push(message);
 
-    if (game.user.isGM) {
-      this._updatePersistentChatHistory();
-    }
+    this._updatePersistentChatHistory();
 
     game.socket.emit("module.foundry-messenger", {
       action: "newMessage",
