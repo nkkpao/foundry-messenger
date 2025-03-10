@@ -1,9 +1,9 @@
 Hooks.once("init", () => {
-  console.log("Foundry Messenger | Инициализация модуля");
+  console.log("Foundry Messenger | Initializing module");
 
   game.settings.register("foundry-messenger", "npcList", {
-    name: "Список NPC",
-    hint: "Введите имена NPC через запятую, которые будут доступны в мессенджере.",
+    name: "NPC List",
+    hint: "Enter NPC names separated by commas.",
     scope: "world",
     config: true,
     type: String,
@@ -12,13 +12,17 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
-  console.log("Foundry Messenger модуль запущен");
+  console.log("Foundry Messenger module loaded");
 
-  game.socket.on("module.foundry-messenger", (data) => {
+  game.socket.on("module.foundry-messenger", async (data) => {
     if (data.action === "newMessage") {
-      const message = data.payload;
-      const npcId = message.npcId;
-      saveMessageToJournal(npcId, message);
+      await saveMessageToJournal(data.payload.npcId, data.payload);
+      const messenger = Object.values(ui.windows).find(
+        (w) => w instanceof MessengerApp
+      );
+      if (messenger) {
+        messenger.renderChat(data.payload.npcId);
+      }
     }
   });
 });
@@ -28,7 +32,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
   if (tokenControls) {
     tokenControls.tools.push({
       name: "messenger",
-      title: "Мессенджер",
+      title: "Messenger",
       icon: "fas fa-comments",
       button: true,
       onClick: () => {
@@ -40,17 +44,13 @@ Hooks.on("getSceneControlButtons", (controls) => {
 
 class MessengerApp extends Application {
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       id: "messenger-app",
       template: "modules/foundry-messenger/templates/messenger.html",
       width: 400,
       height: 600,
-      title: "Мессенджер",
+      title: "Messenger",
     });
-  }
-
-  constructor(options = {}) {
-    super(options);
   }
 
   getData() {
@@ -61,64 +61,60 @@ class MessengerApp extends Application {
   }
 
   getChats() {
-    const npcList = game.settings.get("foundry-messenger", "npcList");
-    const npcNames = npcList
+    const npcList = game.settings.get("foundry-messenger", "npcList") || "";
+    return npcList
       .split(",")
       .map((n) => n.trim())
       .filter((n) => n);
-    return npcNames.map((name) => {
-      return { id: name, name: name };
-    });
   }
 
   activateListeners(html) {
     super.activateListeners(html);
     const self = this;
 
-    const firstNpc = html.find(".chat-tab").first().data("npc-id");
-    if (firstNpc) self.renderChat(firstNpc);
-
-    html.find(".chat-tab").click(function () {
+    html.find(".chat-tab").click(async function () {
       const npcId = $(this).data("npc-id");
-      self.renderChat(npcId);
+      await self.renderChat(npcId);
     });
 
-    html.find(".send-button").click((ev) => {
+    html.find(".send-button").click(async (ev) => {
       ev.preventDefault();
       const npcId = html.find(".chat-tabs .active").data("npc-id");
       const messageInput = html.find("input[name='message']");
       const messageText = messageInput.val().trim();
       if (messageText !== "") {
-        self.sendMessage(npcId, messageText);
+        await self.sendMessage(npcId, messageText);
         messageInput.val("");
       }
     });
   }
 
-  sendMessage(npcId, text) {
+  async sendMessage(npcId, text) {
+    if (!npcId || text.trim() === "") return;
+
     const sender = game.user.isGM ? npcId : game.user.name;
-    const message = {
-      npcId,
-      sender,
-      text,
-      timestamp: Date.now(),
-    };
+    const message = { npcId, sender, text, timestamp: Date.now() };
 
     game.socket.emit("module.foundry-messenger", {
       action: "newMessage",
       payload: message,
     });
-
-    saveMessageToJournal(npcId, message);
-
-    this.renderChat(npcId);
+    await saveMessageToJournal(npcId, message);
+    await this.renderChat(npcId);
   }
 
-  renderChat(npcId) {
-    const journal = game.journal.getName(npcId); 
-    if (journal) {
-      let chatHistory = this.element.find(".chat-history");
-      chatHistory.html(journal.data.content); 
+  async renderChat(npcId) {
+    if (!npcId) return;
+
+    const journal = await getOrCreateJournal();
+    const page = journal.pages.find((p) => p.name === npcId);
+    let chatHistory = this.element.find(".chat-history");
+
+    if (page) {
+      chatHistory.html(page.text.content);
+    } else {
+      chatHistory.html(`<p>No messages with ${npcId}.</p>`);
+      console.error(`Chat page for NPC ${npcId} not found in 'Droppod'.`);
     }
 
     this.element.find(".chat-tab").removeClass("active");
@@ -126,17 +122,66 @@ class MessengerApp extends Application {
   }
 }
 
-async function saveMessageToJournal(npcId, message) {
-  let journal = game.journal.getName(npcId); 
+async function getOrCreateJournal() {
+  let journal = game.journal.getName("Droppod");
+
   if (!journal) {
+    console.log("Creating new 'Droppod' journal.");
     journal = await JournalEntry.create({
-      name: npcId,
-      content: `<h3>${npcId}</h3><p><strong>${message.sender}:</strong> ${message.text}</p>`,
-      folder: null, 
-    });
-  } else {
-    await journal.update({
-      content: `${journal.data.content}<br><strong>${message.sender}:</strong> ${message.text}`,
+      name: "Droppod",
+      pages: [],
+      folder: null,
+      type: "journal",
     });
   }
+
+  return game.journal.getName("Droppod");
+}
+
+async function getOrCreateJournalPage(journal, npcId) {
+  if (!npcId) {
+    console.error("Error: NPC ID is empty or invalid!");
+    return null;
+  }
+
+  let page = journal.pages.find((p) => p.name === npcId);
+
+  if (!page) {
+    console.log(`Creating chat page for ${npcId} in 'Droppod'.`);
+
+    let createdPages = await journal.createEmbeddedDocuments(
+      "JournalEntryPage",
+      [
+        {
+          name: npcId,
+          type: "text",
+          text: { content: `<h3>Chat history with ${npcId}</h3>`, format: 1 },
+        },
+      ]
+    );
+
+    page = createdPages.length > 0 ? createdPages[0] : null;
+  }
+
+  if (!page) {
+    console.error(`Error: Could not create page for NPC ${npcId}`);
+  }
+
+  return page;
+}
+
+async function saveMessageToJournal(npcId, message) {
+  const journal = await getOrCreateJournal();
+  const page = await getOrCreateJournalPage(journal, npcId);
+
+  if (!page) {
+    console.error(`Error: Chat page for ${npcId} not found!`);
+    return;
+  }
+
+  console.log(`Adding message from ${message.sender} in chat with ${npcId}`);
+
+  await page.update({
+    "text.content": `${page.text.content}<br><strong>${message.sender}:</strong> ${message.text}`,
+  });
 }

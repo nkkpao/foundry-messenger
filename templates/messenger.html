@@ -1,18 +1,16 @@
-<!-- templates/messenger.html -->
 <div class="messenger-container">
-  <div class="chat-header">
-    <ul class="chat-tabs">
-      <!-- Вкладки формируются динамически из списка NPC -->
-      {{#each chats}}
-        <li class="chat-tab {{#if @first}}active{{/if}}" data-npc-id="{{id}}">{{name}}</li>
-      {{/each}}
-    </ul>
-  </div>
-  <div class="chat-history">
-    <!-- История сообщений выбранного чата будет подгружаться сюда -->
-  </div>
-  <div class="chat-input">
-    <input type="text" name="message" placeholder="Введите сообщение">
+    <div class="messenger-header">
+        NOX-TECH
+    </div>
+
+    <div class="chat-tabs">
+        {{#each chats}}
+        <div class="chat-tab" data-npc-id="{{this}}">{{this}}</div>
+        {{/each}}
+    </div>
+
+    <div class="chat-history"></div>
+
+    <input type="text" name="message" placeholder="ENTER MESSAGE..." />
     <button class="send-button">Отправить</button>
-  </div>
 </div>
