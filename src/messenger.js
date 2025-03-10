@@ -1,6 +1,5 @@
 Hooks.once("init", () => {
-  console.log("Foundry Messenger | Инициализация настроек модуля");
-
+  console.log("Foundry Messenger | Инициализация модуля");
 
   game.settings.register("foundry-messenger", "npcList", {
     name: "Список NPC",
@@ -8,44 +7,24 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: String,
-    default: "NPC 1, NPC 2"
-  });
-
-  game.settings.register("foundry-messenger", "chatHistory", {
-    name: "История чатов",
-    hint: "Хранит историю сообщений для каждого NPC в формате JSON. Данные сохраняются между сессиями.",
-    scope: "world",
-    config: false,
-    type: String,
-    default: "{}"
+    default: "NPC 1, NPC 2",
   });
 });
 
 Hooks.once("ready", () => {
   console.log("Foundry Messenger модуль запущен");
-  if (game.user.isGM) {
-    game.socket.on("module.foundry-messenger", data => {
-      if (data.action === "newMessage") {
-        let chats;
-        try {
-          chats = JSON.parse(game.settings.get("foundry-messenger", "chatHistory") || "{}");
-        } catch (e) {
-          console.error("Ошибка парсинга chatHistory", e);
-          chats = {};
-        }
-        if (!chats[data.payload.npcId]) chats[data.payload.npcId] = [];
-        if (!chats[data.payload.npcId].some(msg => msg.timestamp === data.payload.timestamp && msg.text === data.payload.text)) {
-          chats[data.payload.npcId].push(data.payload);
-          console.log("Сохраняем историю (GM):", chats);
-          game.settings.set("foundry-messenger", "chatHistory", JSON.stringify(chats));
-        }
-      }
-    });
-  }
+
+  game.socket.on("module.foundry-messenger", (data) => {
+    if (data.action === "newMessage") {
+      const message = data.payload;
+      const npcId = message.npcId;
+      saveMessageToJournal(npcId, message);
+    }
+  });
 });
 
-Hooks.on("getSceneControlButtons", controls => {
-  let tokenControls = controls.find(c => c.name === "token");
+Hooks.on("getSceneControlButtons", (controls) => {
+  let tokenControls = controls.find((c) => c.name === "token");
   if (tokenControls) {
     tokenControls.tools.push({
       name: "messenger",
@@ -54,7 +33,7 @@ Hooks.on("getSceneControlButtons", controls => {
       button: true,
       onClick: () => {
         new MessengerApp().render(true);
-      }
+      },
     });
   }
 });
@@ -66,37 +45,29 @@ class MessengerApp extends Application {
       template: "modules/foundry-messenger/templates/messenger.html",
       width: 400,
       height: 600,
-      title: "Мессенджер"
+      title: "Мессенджер",
     });
   }
 
   constructor(options = {}) {
     super(options);
-    this.chats = this._loadChats();
-  }
-
-  _loadChats() {
-    try {
-      return JSON.parse(game.settings.get("foundry-messenger", "chatHistory") || "{}");
-    } catch (e) {
-      console.error("Ошибка парсинга chatHistory", e);
-      return {};
-    }
   }
 
   getData() {
-    this.chats = this._loadChats();
     return {
       chats: this.getChats(),
-      isGM: game.user.isGM
+      isGM: game.user.isGM,
     };
   }
 
   getChats() {
     const npcList = game.settings.get("foundry-messenger", "npcList");
-    const npcNames = npcList.split(",").map(n => n.trim()).filter(n => n);
-    return npcNames.map(name => {
-      return { id: name, name: name, messages: this.chats[name] || [] };
+    const npcNames = npcList
+      .split(",")
+      .map((n) => n.trim())
+      .filter((n) => n);
+    return npcNames.map((name) => {
+      return { id: name, name: name };
     });
   }
 
@@ -112,7 +83,7 @@ class MessengerApp extends Application {
       self.renderChat(npcId);
     });
 
-    html.find(".send-button").click(ev => {
+    html.find(".send-button").click((ev) => {
       ev.preventDefault();
       const npcId = html.find(".chat-tabs .active").data("npc-id");
       const messageInput = html.find("input[name='message']");
@@ -122,27 +93,6 @@ class MessengerApp extends Application {
         messageInput.val("");
       }
     });
-
-    game.socket.on("module.foundry-messenger", data => {
-      if (data.action === "newMessage") {
-        self.receiveMessage(data.payload);
-      }
-    });
-  }
-
-  renderChat(npcId) {
-    const chat = this.getChats().find(c => c.id === npcId);
-    let chatHistory = this.element.find(".chat-history");
-    let htmlContent = "";
-    if (chat && chat.messages) {
-      chat.messages.forEach(msg => {
-        htmlContent += `<div class="message"><span class="sender">${msg.sender}:</span> ${msg.text}</div>`;
-      });
-    }
-    chatHistory.html(htmlContent);
-
-    this.element.find(".chat-tab").removeClass("active");
-    this.element.find(`.chat-tab[data-npc-id="${npcId}"]`).addClass("active");
   }
 
   sendMessage(npcId, text) {
@@ -151,47 +101,42 @@ class MessengerApp extends Application {
       npcId,
       sender,
       text,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-
-    if (!this.chats[npcId]) this.chats[npcId] = [];
-    this.chats[npcId].push(message);
-
-    this._updatePersistentChatHistory();
 
     game.socket.emit("module.foundry-messenger", {
       action: "newMessage",
-      payload: message
+      payload: message,
     });
+
+    saveMessageToJournal(npcId, message);
 
     this.renderChat(npcId);
   }
 
-  receiveMessage(message) {
-    if (!this.chats[message.npcId]) this.chats[message.npcId] = [];
-    if (!this.chats[message.npcId].some(msg => msg.timestamp === message.timestamp && msg.text === message.text)) {
-      this.chats[message.npcId].push(message);
+  renderChat(npcId) {
+    const journal = game.journal.getName(npcId); 
+    if (journal) {
+      let chatHistory = this.element.find(".chat-history");
+      chatHistory.html(journal.data.content); 
     }
 
-    if (game.user.isGM) {
-      this._updatePersistentChatHistory();
-    }
-
-    const activeNpcId = this.element.find(".chat-tabs .active").data("npc-id");
-    if (activeNpcId === message.npcId) {
-      this.renderChat(message.npcId);
-    }
+    this.element.find(".chat-tab").removeClass("active");
+    this.element.find(`.chat-tab[data-npc-id="${npcId}"]`).addClass("active");
   }
+}
 
-  async _updatePersistentChatHistory() {
-    console.log("Обновляем историю:", this.chats);
-    await game.settings.set("foundry-messenger", "chatHistory", JSON.stringify(this.chats));
-  }
-
-  async close(options) {
-    if (game.user.isGM) {
-      await this._updatePersistentChatHistory();
-    }
-    return super.close(options);
+async function saveMessageToJournal(npcId, message) {
+  let journal = game.journal.getName(npcId); 
+  if (!journal) {
+    journal = await JournalEntry.create({
+      name: npcId,
+      content: `<h3>${npcId}</h3><p><strong>${message.sender}:</strong> ${message.text}</p>`,
+      folder: null, 
+    });
+  } else {
+    await journal.update({
+      content: `${journal.data.content}<br><strong>${message.sender}:</strong> ${message.text}`,
+    });
   }
 }
