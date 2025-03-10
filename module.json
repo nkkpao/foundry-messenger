@@ -1,0 +1,17 @@
+{
+  "name": "foundry-messenger",
+  "title": "Foundry Messenger",
+  "description": "Модуль для имитации мессенджера между персонажами игроков и NPC",
+  "version": "0.1.0",
+  "author": "nkkpao",
+  "minimumCoreVersion": "9",
+  "compatibleCoreVersion": "12",
+  "scripts": [
+    "src/messenger.js"
+  ],
+  "styles": [
+    "styles/messenger.css"
+  ],
+  "esmodules": [],
+  "packs": []
+}
