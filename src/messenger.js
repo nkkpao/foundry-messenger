@@ -72,15 +72,15 @@ class MessengerApp extends Application {
     super.activateListeners(html);
     const self = this;
 
-    html.find(".chat-tab").click(async function () {
+    html.find(".mes-chat-tab").click(async function () {
       const npcId = $(this).data("npc-id");
       await self.renderChat(npcId);
     });
 
-    html.find(".send-button").click(async (ev) => {
+    html.find(".mes-send-button").click(async (ev) => {
       ev.preventDefault();
-      const npcId = html.find(".chat-tabs .active").data("npc-id");
-      const messageInput = html.find("input[name='message']");
+      const npcId = html.find(".mes-chat-tabs .active").data("npc-id");
+      const messageInput = html.find("input[name='mes-message']");
       const messageText = messageInput.val().trim();
       if (messageText !== "") {
         await self.sendMessage(npcId, messageText);
@@ -108,7 +108,7 @@ class MessengerApp extends Application {
 
     const journal = await getOrCreateJournal();
     const page = journal.pages.find((p) => p.name === npcId);
-    let chatHistory = this.element.find(".chat-history");
+    let chatHistory = this.element.find(".mes-chat-history");
 
     if (page) {
       chatHistory.html(page.text.content);
@@ -117,8 +117,10 @@ class MessengerApp extends Application {
       console.error(`Chat page for NPC ${npcId} not found in 'Droppod'.`);
     }
 
-    this.element.find(".chat-tab").removeClass("active");
-    this.element.find(`.chat-tab[data-npc-id="${npcId}"]`).addClass("active");
+    this.element.find(".mes-chat-tab").removeClass("active");
+    this.element
+      .find(`.mes-chat-tab[data-npc-id="${npcId}"]`)
+      .addClass("active");
   }
 }
 

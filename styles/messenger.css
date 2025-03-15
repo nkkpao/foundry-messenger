@@ -32,7 +32,7 @@
   filter: drop-shadow(0 0 5px rgba(255, 26, 26, 0.8));
 }
 
-.chat-tabs {
+.mes-chat-tabs {
   display: flex;
   border-bottom: 3px solid #ff1a1a;
   padding: 5px;
@@ -40,7 +40,7 @@
   background: #0d0d0d;
 }
 
-.chat-tab {
+.mes-chat-tab {
   padding: 10px 25px;
   cursor: pointer;
   color: #ff1a1a;
@@ -52,19 +52,19 @@
   margin: 2px;
 }
 
-.chat-tab:hover {
+.mes-chat-tab:hover {
   border: 2px solid #ff1a1a;
   background: #850000;
   color: #ffffff;
 }
 
-.chat-tab.active {
+.mes-chat-tab.active {
   background: linear-gradient(90deg, #ff1a1a, #850000);
   color: #ffffff;
   text-shadow: 0 0 10px rgba(255, 26, 26, 0.9);
 }
 
-.chat-history {
+.mes-chat-history {
   flex-grow: 1;
   overflow-y: auto;
   padding: 20px;
@@ -75,7 +75,7 @@
   border-bottom: 3px solid #ff1a1a;
 }
 
-.message {
+.mes-message {
   padding: 12px;
   margin: 10px 0;
   background: rgba(255, 26, 26, 0.2);
@@ -84,19 +84,20 @@
   transition: background 0.3s ease-in-out;
   font-size: 13px;
   clip-path: polygon(0% 0%, 95% 0%, 100% 50%, 95% 100%, 0% 100%);
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.message:hover {
+.mes-message:hover {
   background: rgba(255, 26, 26, 0.3);
 }
 
-.sender {
+.mes-sender {
   font-weight: bold;
   color: #ff5e5e;
   text-shadow: 0 0 5px rgba(255, 26, 26, 0.7);
 }
 
-input[name='message'] {
+input[name='mes-message'] {
   width: 100%;
   padding: 15px;
   font-size: 14px;
@@ -108,12 +109,12 @@ input[name='message'] {
   transition: border 0.3s ease;
 }
 
-input[name='message']:focus {
+input[name='mes-message']:focus {
   border-color: #ff1a1a;
   box-shadow: 0 0 10px rgba(255, 26, 26, 0.8);
 }
 
-.send-button {
+.mes-send-button {
   width: 100%;
   padding: 15px;
   background: linear-gradient(90deg, #850000, #ff1a1a);
@@ -127,7 +128,7 @@ input[name='message']:focus {
   clip-path: polygon(0% 0%, 95% 0%, 100% 50%, 95% 100%, 0% 100%);
 }
 
-.send-button:hover {
+.mes-send-button:hover {
   background: linear-gradient(90deg, #ff1a1a, #850000);
   box-shadow: 0 0 15px rgba(255, 26, 26, 0.8);
 }
@@ -142,8 +143,4 @@ input[name='message']:focus {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.message {
-  animation: fadeIn 0.3s ease-in-out;
 }
