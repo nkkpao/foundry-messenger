@@ -1,3 +1,24 @@
+function updateMessengerStyles() {
+  const primaryColor = game.settings.get("foundry-messenger", "primaryColor");
+  const secondaryColor = game.settings.get(
+    "foundry-messenger",
+    "secondaryColor"
+  );
+
+  document.documentElement.style.setProperty("--primary-color", primaryColor);
+  document.documentElement.style.setProperty(
+    "--secondary-color",
+    secondaryColor
+  );
+
+  const messenger = Object.values(ui.windows).find(
+    (w) => w instanceof MessengerApp
+  );
+  if (messenger) {
+    messenger.render(true);
+  }
+}
+
 Hooks.once("init", () => {
   console.log("Foundry Messenger | Initializing module");
 
@@ -9,10 +30,49 @@ Hooks.once("init", () => {
     type: String,
     default: "NPC 1, NPC 2",
   });
+
+  game.settings.register("foundry-messenger", "primaryColor", {
+    name: "Primary Color",
+    hint: "Choose the main color for the messenger interface. Needs reload.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "#ff1a1a",
+  });
+
+  game.settings.register("foundry-messenger", "headerText", {
+    name: "Header Text",
+    hint: "Customize the header text of the messenger window.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "Nox-Tech",
+  });
+
+  game.settings.register("foundry-messenger", "secondaryColor", {
+    name: "Secondary Color",
+    hint: "Choose the secondary color for gradients and highlights. Needs reload.",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "#850000",
+  });
+
+  game.socket.on("module.foundry-messenger", async (data) => {
+    if (data.action === "requestReload") {
+      const confirmReload = confirm(
+        "Changes require a reload to apply. Reload now?"
+      );
+      if (confirmReload) {
+        location.reload();
+      }
+    }
+  });
 });
 
 Hooks.once("ready", () => {
   console.log("Foundry Messenger module loaded");
+  updateMessengerStyles();
 
   game.socket.on("module.foundry-messenger", async (data) => {
     if (data.action === "newMessage") {
@@ -57,6 +117,9 @@ class MessengerApp extends Application {
     return {
       chats: this.getChats(),
       isGM: game.user.isGM,
+      primaryColor: game.settings.get("foundry-messenger", "primaryColor"),
+      secondaryColor: game.settings.get("foundry-messenger", "secondaryColor"),
+      headerText: game.settings.get("foundry-messenger", "headerText"),
     };
   }
 
