@@ -76,7 +76,7 @@
   background: #121212;
   border-top: 3px solid var(--primary-color);
   border-bottom: 3px solid var(--primary-color);
-  max-height: calc(100% - 135px);
+  max-height: 60.5%;
 }
 
 input[name='mes-message'] {
