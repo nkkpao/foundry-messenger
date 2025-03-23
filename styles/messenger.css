@@ -1,15 +1,10 @@
-:root {
-  --primary-color: #ff1a1a;
-  --secondary-color: #850000;
-}
-
 .messenger-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: #050505;
   border: 3px solid var(--primary-color);
-  box-shadow: 0 0 15px rgba(255, 26, 26, 0.6);
+  box-shadow: 0 0 15px rgba(var(--primary-color), 0.6);
   font-family: 'Rajdhani', sans-serif;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -56,7 +51,6 @@
   font-weight: bold;
   border: 2px solid transparent;
   transition: all 0.3s ease;
-  margin: 2px;
   flex-shrink: 0;
   background: #121212;
   clip-path: polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%);
@@ -82,6 +76,7 @@
   background: #121212;
   border-top: 3px solid var(--primary-color);
   border-bottom: 3px solid var(--primary-color);
+  max-height: calc(100% - 135px);
 }
 
 input[name='mes-message'] {
