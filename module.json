@@ -2,19 +2,19 @@
   "name": "foundry-messenger",
   "url": "https://github.com/nkkpao/foundry-messenger",
   "manifest": "https://raw.githubusercontent.com/nkkpao/foundry-messenger/main/module.json",
-  "download": "https://github.com/nkkpao/foundry-messenger/releases/download/foundrymessenger012/foundry-messenger.zip",
+  "download": "https://github.com/nkkpao/foundry-messenger/releases/download/foundrymessenger013/foundry-messenger.zip",
   "bugs": "https://github.com/nkkpao/foundry-messenger/issues",
   "flags": {
     "allowBugReporter": true
   },
-  "version": "0.1.2",
+  "version": "0.1.3",
   "compatibility": {
     "minimum": "11",
     "verified": "12.331",
     "maximum": "12"
   },
   "title": "Foundry Messenger",
-  "description": "Модуль для имитации мессенджера между персонажами игроков и NPC",
+  "description": "Module for simulating a messenger between player characters and NPCs",
   "scripts": [
     "src/messenger.js"
   ],
